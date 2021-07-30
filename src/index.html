@@ -1,0 +1,122 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/lib/theme-chalk/index.css">
+    <script src="https://unpkg.com/vue@next"></script>
+    <script src="https://unpkg.com/element-plus/lib/index.full.js"></script>
+    <title>前端海量数据</title>
+    <style>
+      .container {
+        display: flex;
+        border: 1px solid;
+        overflow-y: auto;
+        height: var(--containerHeight);
+      }
+      .container[loading=true] {
+        pointer-events: none;
+      }
+      .scroll-blank {
+        height: var(--height);
+      }
+      .scroll {
+        margin-top: var(--marginTop);
+      }
+      .scroll-item {
+        height: var(--itemHeight);
+        /* background-color: pink; */
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div
+        v-loading='loading'
+        :loading='loading'
+        ref='container'
+        class="container" 
+        :style="{
+          '--containerHeight': containerHeight + 'px',
+          '--height': height + 'px',
+          '--itemHeight': itemHeight + 'px',
+          '--marginTop': marginTop + 'px',
+        }"
+      >
+        <div class="scroll-blank"></div>
+        <div class="scroll">
+          <div v-for='(item, index) in list' :key='item' class="scroll-item">{{ `${item.id}-------------${item.num}` }}</div>
+        </div>
+      </div>
+    </div>
+    <script>
+      const { watchEffect, onMounted, shallowRef, ref } = Vue
+
+      const App = {
+        setup() {
+          const container = ref(null)
+          const list = shallowRef([])
+          const height = ref(0)
+          const start = ref(0)
+          const marginTop = ref(0)
+          const loading = ref(true)
+          const isFinished = ref(false)
+          const itemHeight = 20
+          const itemNum = 20
+          const containerHeight = itemHeight * itemNum
+
+          const worker = new Worker('./worker.js')
+
+          worker.onmessage = ({ data }) => {
+            if (data.type === 'close') {
+              console.log(data.msg)
+              alert(data.msg)
+              return
+            }
+            if (data.type === 'ok') {
+              isFinished.value = true
+              height.value = data.data * itemHeight
+              return
+            }
+            
+            loading.value = false
+            list.value = data
+          }
+
+          watchEffect(async () => {
+            if (!isFinished.value) return
+            
+            worker.postMessage({
+              size: itemNum,
+              start: start.value
+            })
+          })
+
+          onMounted(() => {
+            function fnc () {
+              const { scrollTop } = this
+              const itemNum = scrollTop / itemHeight
+              start.value = parseInt(itemNum)
+              marginTop.value = scrollTop
+            }
+
+            container.value.addEventListener('scroll', fnc)
+          })
+
+          return {
+            loading,
+            list,
+            container,
+            marginTop,
+            containerHeight,
+            height,
+            itemHeight,
+          }
+        }
+      };
+
+      const app = Vue.createApp(App);
+      app.use(ElementPlus);
+      app.mount("#app");
+    </script>
+  </body>
+</html>

@@ -1,0 +1,96 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <script src="https://unpkg.com/vue@next"></script>
+    <title>虚拟列表</title>
+    <style>
+      .container {
+        display: flex;
+        border: 1px solid;
+        overflow-y: auto;
+        height: var(--containerHeight);
+      }
+      .scroll-blank {
+        height: var(--height);
+      }
+      .scroll {
+        margin-top: var(--marginTop);
+      }
+      .scroll-item {
+        height: var(--itemHeight);
+        /* background-color: pink; */
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div
+        ref='container'
+        class="container" 
+        :style="{
+          '--containerHeight': containerHeight + 'px',
+          '--height': height + 'px',
+          '--itemHeight': itemHeight + 'px',
+          '--marginTop': marginTop + 'px',
+        }"
+      >
+        <div class="scroll-blank"></div>
+        <div class="scroll">
+          <div v-for='(item, index) in activeList' :key='item' class="scroll-item">{{ item }}</div>
+        </div>
+      </div>
+    </div>
+    <script>
+      const { computed, onMounted, ref } = Vue
+
+      const createList = () => {
+        const list = []
+
+        let i = 0
+        while (i < 1000) {
+          list.push(i++)
+        }
+
+        return list
+      }
+      const App = {
+        setup() {
+          const container = ref(null)
+          const list = createList()
+          const containerHeight = 400
+          const itemHeight = 20
+          const height = list.length * itemHeight
+          let start = ref(0)
+          let marginTop = ref(0)
+
+          const activeList = computed(() => {
+            const index = start.value
+            return list.slice(index, index + 20)
+          })
+
+          onMounted(() => {
+            container.value.addEventListener('scroll', ({ target }) => {
+              const { scrollTop } = target
+              const itemNum = scrollTop / itemHeight
+              start.value = parseInt(itemNum)
+              marginTop.value = scrollTop
+            })
+          })
+
+          return {
+            container,
+            marginTop,
+            containerHeight,
+            height,
+            itemHeight,
+            activeList
+          }
+        }
+      };
+
+      const app = Vue.createApp(App);
+      app.mount("#app");
+    </script>
+  </body>
+</html>
