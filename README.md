@@ -14,6 +14,8 @@
 
 ### 启动步骤：
 
-1. npm start
+1. npm i
 
-2. 访问 http://localhost:9527
+2. npm start
+
+3. 访问 http://localhost:9527
