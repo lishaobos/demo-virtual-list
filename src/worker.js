@@ -28,7 +28,11 @@ const createDatabase = async () => {
 // 创建表
 const createTable = db => {
   return new Promise((f, r) => {
-    db.deleteObjectStore('list')
+    try {
+      db.deleteObjectStore('list')
+    }catch (e) {
+      console.log(e)
+    }
     const table = db.createObjectStore('list', { keyPath: 'id' })
     
     table.transaction.oncomplete = () => {
